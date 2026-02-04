@@ -1,0 +1,28 @@
+name: flutter_volume_listener
+description: "A Flutter plugin to read volume and listen to volume changes on iOS and Android."
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.7
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pigeon: ^26.1.7
+  plugin_platform_interface: ^2.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.adampalinkas.flutter_volume_listener
+        pluginClass: FlutterVolumeListenerPlugin
+      ios:
+        pluginClass: FlutterVolumeListenerPlugin
