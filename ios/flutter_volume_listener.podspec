@@ -4,16 +4,16 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_volume_listener'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '0.9.0'
+  s.summary          = 'A Flutter plugin to read volume and listen to volume changes on iOS.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+A Flutter plugin to read volume and listen to volume changes on iOS.
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'flutter_volume_listener/Sources/flutter_volume_listener/**/*.swift'
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
 

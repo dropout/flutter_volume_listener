@@ -15,7 +15,7 @@ Expose a method `getVolumeOnResume` that uses a different approach to read the v
 
 ### Setup
 
-No special setup is required.
+Use a **real device** rather than a simulator when trying to test or run the plugin on iPhone or iPad device.
 
 ## Usage
 
