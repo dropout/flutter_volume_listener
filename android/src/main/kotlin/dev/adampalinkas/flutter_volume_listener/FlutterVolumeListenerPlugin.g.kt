@@ -115,7 +115,6 @@ override fun onCancel(p0: Any?) {}
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface FlutterVolumeListenerHostApi {
   fun getVolume(callback: (Result<Double>) -> Unit)
-  fun getVolumeOnResume(callback: (Result<Double>) -> Unit)
 
   companion object {
     /** The codec used by FlutterVolumeListenerHostApi. */
@@ -131,24 +130,6 @@ interface FlutterVolumeListenerHostApi {
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.getVolume{ result: Result<Double> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(FlutterVolumeListenerPluginPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(FlutterVolumeListenerPluginPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_volume_listener.FlutterVolumeListenerHostApi.getVolumeOnResume$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.getVolumeOnResume{ result: Result<Double> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(FlutterVolumeListenerPluginPigeonUtils.wrapError(error))

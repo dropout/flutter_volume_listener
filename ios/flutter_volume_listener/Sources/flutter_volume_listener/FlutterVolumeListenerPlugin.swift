@@ -1,63 +1,82 @@
 import AVFoundation
+import MediaPlayer
 import Flutter
 import UIKit
-import MediaPlayer
+import Logging
 
-var _hostApi : FlutterVolumeListenerHostApi? = nil
-var _volumeObserver: VolumeObserver? = nil
-var _volumeChangeStreamHandler: VolumeChangeStreamHandlerImpl? = nil
+typealias OnDetachCallback = () -> Void
 
-public class FlutterVolumeListenerPlugin: NSObject, FlutterPlugin {
+// Plugin
+public class FlutterVolumeListenerPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate, FlutterVolumeListenerHostApi {
+  
+  private let logger = Logger(label: "FlutterVolumeListenerPlugin")
+  
+  private let audioSessionManager: AudioSessionManager
+  private let volumeChangeStreamHandler: VolumeChangeStreamHandlerImpl
+  private let onDetach: OnDetachCallback?
+  
+  init(audioSessionManager: AudioSessionManager, volumeChangeStreamHandler: VolumeChangeStreamHandlerImpl, onDetach: OnDetachCallback? = nil) throws {
+    self.audioSessionManager = audioSessionManager
+    self.volumeChangeStreamHandler = volumeChangeStreamHandler
+    self.onDetach = onDetach
+    try audioSessionManager.activate()
+  }
   
   // Entry point
   public static func register(with registrar: FlutterPluginRegistrar) {
-
-    let messenger = registrar.messenger()
-    
-    // Setup method calls api
-    _hostApi = FlutterVolumeListenerHostApiImpl()
-    FlutterVolumeListenerHostApiSetup.setUp(binaryMessenger: messenger, api: _hostApi)
-    
-    // Setup volume change events
-    _volumeChangeStreamHandler = VolumeChangeStreamHandlerImpl()
-    VolumeChangeStreamHandler.register(with: messenger, streamHandler: _volumeChangeStreamHandler!)
-    
-    _volumeObserver = VolumeObserver(volumeChangeHandler: _volumeChangeStreamHandler!)
+    let logger = Logger(label: "FlutterVolumeListenerPlugin.register")
+    do {
+      let messenger = registrar.messenger()
+      
+      // Attach stream handler to the volume observer
+      let streamHandler = VolumeChangeStreamHandlerImpl()
+      let audioSessionManager = try DefaultAudioSessionManager(audioSession: AVAudioSession.sharedInstance(), volumeChangeHandler: streamHandler)
+      
+      // Register the stream handler instance
+      VolumeChangeStreamHandler.register(with: messenger, streamHandler: streamHandler)
+      
+      // Setup the Pigeon host api
+      let plugin = try FlutterVolumeListenerPlugin(
+        audioSessionManager: audioSessionManager,
+        volumeChangeStreamHandler: streamHandler,
+        onDetach: {
+          // Here we eliminate the registered instance of the plugin (which implements the hostapi) that can gracefully release resources
+          FlutterVolumeListenerHostApiSetup.setUp(binaryMessenger: messenger, api: nil)
+          logger.info("Reference for the plugin has been nulled")
+        }
+      )
+      
+      // Register this instance to receive lifecycle callbacks
+      registrar.addSceneDelegate(plugin)
+      
+      // Setup plugin instance in the registrar that will hold a strong reference to it
+      FlutterVolumeListenerHostApiSetup.setUp(binaryMessenger: messenger, api: plugin)
+    } catch {
+      logger.error("Unable to register plugin: \(error)")
+    }
   }
   
   public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
-    _hostApi = nil
-    _volumeObserver = nil
-    _volumeChangeStreamHandler?.onCancel(withArguments: nil)
+    logger.info("Detached from engine")
+    self.onDetach?()
+    self.volumeChangeStreamHandler.onCancel(withArguments: nil)
   }
-
-}
-
-// Implementation for Host API
-class FlutterVolumeListenerHostApiImpl : NSObject, FlutterVolumeListenerHostApi {
   
   // Read volume from active AudioSession
   func getVolume(completion: @escaping (Result<Double, any Error>) -> Void) {
-    let session = AVAudioSession.sharedInstance()
-    try? session.setCategory(.playback)
-    try? session.setActive(true, options: [])
-    let volume = session.outputVolume
+    let volume = audioSessionManager.volume
     completion(.success(Double(volume)))
+    logger.info("getVolume: \(volume)")
   }
-  
-  // Read the volume from active AudioSession but trigger a neutral change before reading the value.
-  // When resuming app from background and the volume has been changed, AudioSession.outputVolume is not
-  // reflecting the changed volume value. We need to "kick in" with a volume setting so that up-to-date values can be
-  // read from AudioSession.outputVolume and the app can show a valid volume value.
-  func getVolumeOnResume(completion: @escaping (Result<Double, any Error>) -> Void) {
-    let session = AVAudioSession.sharedInstance()
-    try? session.setCategory(.playback)
-    try? session.setActive(true, options: [])
-    MPVolumeView.triggerChange()
-    let volume = session.outputVolume
-    completion(.success(Double(volume)))
+    
+  public func sceneDidBecomeActive(_ scene: UIScene) {
+    do {
+      try audioSessionManager.activate()
+    } catch {
+      logger.error("Failed to activate audio session when scene did become active: \(error)")
+    }
   }
-  
+    
 }
 
 // Handle sending volume change events to Flutter
@@ -81,59 +100,5 @@ class VolumeChangeStreamHandlerImpl: VolumeChangeStreamHandler {
   
 }
 
-// Creates a Key Value Observation for AudioSession.outputVolume, so that changes can be streamed to
-// the Flutter EventChannel
-class VolumeObserver: NSObject {
-  private var observation: NSKeyValueObservation? = nil
-  private let volumeChangeHandler: VolumeChangeStreamHandlerImpl
-  
-  init(volumeChangeHandler: VolumeChangeStreamHandlerImpl) {
-    self.volumeChangeHandler = volumeChangeHandler
-    super.init()
-    let session = AVAudioSession.sharedInstance()
-    try? session.setActive(true, options: [])
-    observation = session.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
-        if let newValue = change.newValue {
-            self?.volumeChangeHandler.onVolumeChange(volume: Double(newValue))
-        }
-    }
-  }
-  
-  deinit {
-    observation?.invalidate()
-  }
-}
 
-// Helper extension to work with setting volume
-// TODO: Make it more efficient so that no MPVolumeView is created on each method call
-extension MPVolumeView {
-  
-  static func setVolume(_ volume: Float) {
-    let volumeView = MPVolumeView()
-    let slider = volumeView.subviews.first(where: { $0 is UISlider }) as? UISlider
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) {
-      slider?.value = volume
-    }
-  }
-  
-  static func triggerChange() {
-    let volumeView = MPVolumeView()
-    let slider = volumeView.subviews.first(where: { $0 is UISlider }) as? UISlider
-    
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) {
-      let value = slider?.value ?? 0.5
-      if (value >= 1.0) {
-        slider?.value = 0.99
-        slider?.value = 1.0
-      } else if (value <= 0.0) {
-        slider?.value = 0.01
-        slider?.value = 0.0
-      } else {
-        slider?.value = value + 0.01
-        slider?.value = value - 0.01
-      }
-      
-    }
-  }
-  
-}
+

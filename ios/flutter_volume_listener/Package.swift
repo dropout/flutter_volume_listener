@@ -12,14 +12,16 @@ let package = Package(
         .library(name: "flutter-volume-listener", targets: ["flutter_volume_listener"])
     ],
     dependencies: [
-        .package(name: "FlutterFramework", path: "../FlutterFramework")
+        .package(name: "FlutterFramework", path: "../FlutterFramework"),
+        .package(url: "https://github.com/apple/swift-log", from: "1.6.0")
     ],
     targets: [
         .target(
             // TODO: Update your target name.
             name: "flutter_volume_listener",
             dependencies: [
-                .product(name: "FlutterFramework", package: "FlutterFramework")
+                .product(name: "FlutterFramework", package: "FlutterFramework"),
+                .product(name: "Logging", package: "swift-log")
             ],
             resources: [
                 // TODO: If your plugin requires a privacy manifest

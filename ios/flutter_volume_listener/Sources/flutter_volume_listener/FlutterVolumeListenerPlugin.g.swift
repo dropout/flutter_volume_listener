@@ -155,7 +155,6 @@ class VolumeChangeStreamHandler: PigeonEventChannelWrapper<Double> {
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol FlutterVolumeListenerHostApi {
   func getVolume(completion: @escaping (Result<Double, Error>) -> Void)
-  func getVolumeOnResume(completion: @escaping (Result<Double, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -178,21 +177,6 @@ class FlutterVolumeListenerHostApiSetup {
       }
     } else {
       getVolumeChannel.setMessageHandler(nil)
-    }
-    let getVolumeOnResumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_volume_listener.FlutterVolumeListenerHostApi.getVolumeOnResume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getVolumeOnResumeChannel.setMessageHandler { _, reply in
-        api.getVolumeOnResume { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      getVolumeOnResumeChannel.setMessageHandler(nil)
     }
   }
 }

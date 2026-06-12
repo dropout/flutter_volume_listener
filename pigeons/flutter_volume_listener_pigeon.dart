@@ -19,7 +19,4 @@ abstract class FlutterVolumeListenerEventApi {
 abstract class FlutterVolumeListenerHostApi {
   @async
   double getVolume();
-
-  @async
-  double getVolumeOnResume();
 }

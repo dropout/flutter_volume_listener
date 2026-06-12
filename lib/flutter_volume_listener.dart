@@ -8,7 +8,6 @@ class FlutterVolumeListener {
 
   // Method to get current volume
   Future<double> get volume => _api.getVolume();
-  Future<double> getVolumeOnResume() => _api.getVolumeOnResume();
 
   // Event channel for volume changes
   Stream<double> get onVolumeChanged => _volChange;

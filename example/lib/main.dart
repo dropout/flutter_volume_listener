@@ -21,6 +21,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final flutterVolumeListener = FlutterVolumeListener();
   StreamSubscription<double>? volumeChangeSub;
 
+  bool get isSubscribed => volumeChangeSub != null && !volumeChangeSub!.isPaused;
+
   @override
   void initState() {
     initPlatformState();
@@ -39,10 +41,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch(state) {
       case AppLifecycleState.resumed:
-        // App has come to the foreground
-        // Use `getVolumeOnResume` to get the current volume on all
-        // platforms reliably
-        flutterVolumeListener.getVolumeOnResume().then((vol) {
+        flutterVolumeListener.volume.then((vol) {
           if (!mounted) return;
           setState(() {
             _currentVolume = vol;
@@ -88,7 +87,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           title: const Text('Flutter Volume Listener Example'),
         ),
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             SizedBox(
               width: double.infinity,
               height: 200,
@@ -117,6 +118,32 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 )
               ),
             ),
+
+            Row(
+              children: [
+                const Text("Listen to volume changes"),
+                Switch(value: isSubscribed, onChanged: (value) {
+                  if (value) {
+                    volumeChangeSub?.resume();
+                  } else {
+                    volumeChangeSub?.pause();
+                  }
+                  setState(() {});
+                }),
+              ],
+            ),
+
+            OutlinedButton(
+              onPressed: () async {
+                final vol = await flutterVolumeListener.volume;
+                setState(() {
+                  _currentVolume = vol;
+                });
+              },
+              child: const Text("Refresh Volume")
+            ),
+            
+
           ],
         ),
       ),
