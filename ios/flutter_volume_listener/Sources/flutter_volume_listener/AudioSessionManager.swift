@@ -11,25 +11,25 @@ import Logging
 protocol AudioSessionManager {
   var volume: Float { get }
   func activate() throws
+  func observeVolumeChange(onChange: @escaping (Double) -> Void) throws -> NSKeyValueObservation?
 }
 
 class DefaultAudioSessionManager : AudioSessionManager {
   
   let logger = Logger(label: "AudioSessionManager")
-    
+  
+  // An AVAudioSession instance to work on
   private let audioSession: AVAudioSession
-  private let volumeChangeHandler: VolumeChangeStreamHandlerImpl
-  private var observation: NSKeyValueObservation? = nil
   
   init(audioSession: AVAudioSession, volumeChangeHandler: VolumeChangeStreamHandlerImpl) throws {
     self.audioSession = audioSession
-    self.volumeChangeHandler = volumeChangeHandler
-    try attachAVAudioSessionOutputVolumeKVO()
+    try activate()
   }
   
   public func activate() throws {
     logger.info("Activating audio session")
     try audioSession.setActive(true, options: [])
+    // Force .playback for now to make outputVolume read consistent after backgrounding
     try audioSession.setCategory(.playback, options: [])
   }
     
@@ -42,26 +42,18 @@ class DefaultAudioSessionManager : AudioSessionManager {
     }
   }
   
-  private func attachAVAudioSessionOutputVolumeKVO() throws {
-    logger.info("Attaching KVO to AVAudioSession.outputVolume")
-    try audioSession.setActive(true, options: [])
-
-    observation = audioSession.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
-      if let newValue = change.newValue {
-        self?.volumeChangeHandler.onVolumeChange(volume: Double(newValue))
-        self?.logger.info("AVAudioSession.outputVolume changed, new value: \(newValue)")
-      }
+  func observeVolumeChange(onChange: @escaping (Double) -> Void) throws -> NSKeyValueObservation? {
+    // 1. Create and return the observation object
+    try activate()
+    return audioSession.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
+      guard let newValue = change.newValue else { return }
+      
+      // 2. Call the passed-in callback with the new volume
+      onChange(Double(newValue))
+      
+      // 3. Keep your logging if needed
+      self?.logger.info("AVAudioSession.outputVolume changed, new value: \(newValue)")
     }
-  }
-  
-  private func detachAVAudioSessionOutputVolumeKVO() {
-    logger.info("Detaching KVO from AVAudioSession.outputVolume")
-    observation?.invalidate()
-    observation = nil
-  }
-  
-  deinit {
-    detachAVAudioSessionOutputVolumeKVO()
   }
   
 }

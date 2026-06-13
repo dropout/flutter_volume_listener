@@ -6,6 +6,7 @@ import Foundation
 /// - Configure `stubbedVolume` to control what `volume` returns.
 /// - Set `activateShouldThrow` to simulate failures from `activate()`.
 final class MockAudioSessionManager: AudioSessionManager {
+  
   // MARK: - Stubs
   var stubbedVolume: Float = 0.5
   var activateShouldThrow: Error? = nil
@@ -13,6 +14,7 @@ final class MockAudioSessionManager: AudioSessionManager {
   // MARK: - Call tracking
   private(set) var activateCallCount: Int = 0
   private(set) var getVolumeCallCount: Int = 0
+  private(set) var observeVolumeChangeCallCount: Int = 0
 
   // MARK: - AudioSessionManager
   var volume: Float {
@@ -26,6 +28,13 @@ final class MockAudioSessionManager: AudioSessionManager {
       throw error
     }
   }
+  
+  func observeVolumeChange(onChange: @escaping (Double) -> Void) throws -> NSKeyValueObservation? {
+    observeVolumeChangeCallCount += 1
+    onChange(0.75)
+    return nil
+  }
+  
 }
 
 /// A lightweight error type for simulating failures in tests.

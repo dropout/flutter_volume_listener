@@ -15,11 +15,15 @@ public class FlutterVolumeListenerPlugin: NSObject, FlutterPlugin, FlutterSceneL
   private let volumeChangeStreamHandler: VolumeChangeStreamHandlerImpl
   private let onDetach: OnDetachCallback?
   
+  private var observation: NSKeyValueObservation?
+  
+  
   init(audioSessionManager: AudioSessionManager, volumeChangeStreamHandler: VolumeChangeStreamHandlerImpl, onDetach: OnDetachCallback? = nil) throws {
     self.audioSessionManager = audioSessionManager
     self.volumeChangeStreamHandler = volumeChangeStreamHandler
     self.onDetach = onDetach
     try audioSessionManager.activate()
+    observation = try audioSessionManager.observeVolumeChange(onChange: volumeChangeStreamHandler.onVolumeChange)
   }
   
   // Entry point
@@ -58,7 +62,16 @@ public class FlutterVolumeListenerPlugin: NSObject, FlutterPlugin, FlutterSceneL
   
   public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
     logger.info("Detached from engine")
+    // Will make use of binarymessenger to null out the plugins strong reference
+    // and we don't have to keep a messenger reference inside the plugin
+    // This makes testing easier
     self.onDetach?()
+    
+    // Cancel the outputVolume KVO
+    self.observation?.invalidate()
+    self.observation = nil
+    
+    // Cancel the volume change stream
     self.volumeChangeStreamHandler.onCancel(withArguments: nil)
   }
   
@@ -67,6 +80,10 @@ public class FlutterVolumeListenerPlugin: NSObject, FlutterPlugin, FlutterSceneL
     let volume = audioSessionManager.volume
     completion(.success(Double(volume)))
     logger.info("getVolume: \(volume)")
+  }
+  
+  func onVolumeChange(volume: Float) {
+    logger.info("volume change: \(volume)")
   }
     
   public func sceneDidBecomeActive(_ scene: UIScene) {
@@ -99,6 +116,3 @@ class VolumeChangeStreamHandlerImpl: VolumeChangeStreamHandler {
   }
   
 }
-
-
-

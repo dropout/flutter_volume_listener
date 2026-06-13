@@ -7,17 +7,6 @@ import AVFoundation
 
 class FlutterVolumeListenerPluginTests: XCTestCase {
   
-  
-//  override func setUp() {
-//    super.setUp()
-//    mockAudioSessionManager = MockAudioSessionManager()
-//  }
-//  
-//  override func tearDown() {
-//    mockAudioSessionManager = nil
-//    super.tearDown()
-//  }
-  
   func testPluginInitializationActivatesAudioSessionManager() throws {
     // Given
     let mockAudioSessionManager = MockAudioSessionManager()
@@ -33,6 +22,11 @@ class FlutterVolumeListenerPluginTests: XCTestCase {
 
     // Then
     XCTAssertEqual(mockAudioSessionManager.activateCallCount, 1, "AudioSessionManager.activate() should be called during plugin initialization")
+    XCTAssertEqual(mockAudioSessionManager.observeVolumeChangeCallCount, 1, "AudioSessionManager.observeVolumeChange() should be called during plugin initialization")
+    
+    // For the sake of testing an initial change is triggered by the mock
+    XCTAssertEqual(mockVolumeChangeStreamHandler.onVolumeChangeCallCount, 1, "VolumeChangeStreamHandler.onVolumeChange() should be called during plugin initialization")
+    XCTAssertEqual(mockVolumeChangeStreamHandler.receivedVolumes[0], 0.75, "There should be a volume change event with the default value")
   }
   
   func testGetVolumeCallsAudioSessionManagerVolumeGetter() throws {
@@ -68,6 +62,24 @@ class FlutterVolumeListenerPluginTests: XCTestCase {
     XCTAssertEqual(mockAudioSessionManager.getVolumeCallCount, 1, "AudioSessionManager.volume getter should be called when getVolume() is invoked")
     // Verify the completion received a volume value
     XCTAssertNotNil(completionVolume, "Completion should be called with a volume value")
+  }
+  
+  func testVolumeChangeStreamHandlerConnected() throws {
+    // Given
+    let mockAudioSessionManager = MockAudioSessionManager()
+    let mockVolumeChangeStreamHandler = MockVolumeChangeStreamHandlerImpl()
+
+    // When: instantiate plugin with the mock audio session manager
+    // Adjust the initializer to match your plugin's API
+    let plugin = try FlutterVolumeListenerPlugin(
+      audioSessionManager: mockAudioSessionManager,
+      volumeChangeStreamHandler: mockVolumeChangeStreamHandler,
+    )
+    _ = plugin // silence unused warning if needed
+
+    // Then
+    XCTAssertEqual(mockVolumeChangeStreamHandler.onVolumeChangeCallCount, 1, "VolumeChangeStreamHandler.onVolumeChange() should be called")
+    XCTAssertEqual(mockVolumeChangeStreamHandler.receivedVolumes[0], 0.75, "There should be a volume change event with the default value")
   }
   
 }
