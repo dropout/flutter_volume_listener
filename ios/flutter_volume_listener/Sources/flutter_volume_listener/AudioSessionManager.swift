@@ -44,7 +44,6 @@ class DefaultAudioSessionManager : AudioSessionManager {
   
   func observeVolumeChange(onChange: @escaping (Double) -> Void) throws -> NSKeyValueObservation? {
     // 1. Create and return the observation object
-    try activate()
     return audioSession.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
       guard let newValue = change.newValue else { return }
       

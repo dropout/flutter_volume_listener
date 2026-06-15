@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "flutter_volume_listener",
     platforms: [
-        .iOS("13.0"),
+        .iOS("15.6"),
     ],
     products: [
         .library(name: "flutter-volume-listener", targets: ["flutter_volume_listener"])
@@ -38,3 +38,4 @@ let package = Package(
         )
     ]
 )
+

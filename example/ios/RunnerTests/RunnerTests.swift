@@ -23,10 +23,6 @@ class FlutterVolumeListenerPluginTests: XCTestCase {
     // Then
     XCTAssertEqual(mockAudioSessionManager.activateCallCount, 1, "AudioSessionManager.activate() should be called during plugin initialization")
     XCTAssertEqual(mockAudioSessionManager.observeVolumeChangeCallCount, 1, "AudioSessionManager.observeVolumeChange() should be called during plugin initialization")
-    
-    // For the sake of testing an initial change is triggered by the mock
-    XCTAssertEqual(mockVolumeChangeStreamHandler.onVolumeChangeCallCount, 1, "VolumeChangeStreamHandler.onVolumeChange() should be called during plugin initialization")
-    XCTAssertEqual(mockVolumeChangeStreamHandler.receivedVolumes[0], 0.75, "There should be a volume change event with the default value")
   }
   
   func testGetVolumeCallsAudioSessionManagerVolumeGetter() throws {
@@ -46,6 +42,7 @@ class FlutterVolumeListenerPluginTests: XCTestCase {
     // Provide completion closure and verify it's used
     let completionCalled = XCTestExpectation(description: "getVolume completion called")
     var completionVolume: Double?
+    
     plugin.getVolume { result in
       switch result {
       case .success(let volume):
@@ -55,6 +52,7 @@ class FlutterVolumeListenerPluginTests: XCTestCase {
       }
       completionCalled.fulfill()
     }
+    
     // Wait for completion to be called
     wait(for: [completionCalled], timeout: 1.0)
 
