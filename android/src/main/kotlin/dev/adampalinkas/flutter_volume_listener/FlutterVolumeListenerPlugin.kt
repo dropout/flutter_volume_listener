@@ -5,13 +5,15 @@ import android.content.Context
 import android.content.IntentFilter
 import android.media.AudioManager
 
+
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 
 class FlutterVolumeListenerPlugin : FlutterPlugin, FlutterVolumeListenerHostApi {
 
   private lateinit var context : Context
   private lateinit var volumeReceiver: VolumeChangeReceiver
-  private lateinit var volumeHandler: VolumeChangeHandler
+  private lateinit var volumeChangeHandler: VolumeChangeHandler
 
   // Entry point
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -19,10 +21,10 @@ class FlutterVolumeListenerPlugin : FlutterPlugin, FlutterVolumeListenerHostApi 
 
     FlutterVolumeListenerHostApi.setUp(binding.binaryMessenger, this)
 
-    volumeHandler = VolumeChangeHandler()
-    VolumeChangeStreamHandler.register(binding.binaryMessenger, volumeHandler)
+    volumeChangeHandler = VolumeChangeHandler()
+    VolumeChangeStreamHandler.register(binding.binaryMessenger, volumeChangeHandler)
 
-    volumeReceiver = VolumeChangeReceiver(volumeHandler, this)
+    volumeReceiver = VolumeChangeReceiver(volumeChangeHandler, this)
     val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
     context.registerReceiver(volumeReceiver, filter)
 
@@ -30,11 +32,11 @@ class FlutterVolumeListenerPlugin : FlutterPlugin, FlutterVolumeListenerHostApi 
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     FlutterVolumeListenerHostApi.setUp(binding.binaryMessenger, null)
-    volumeHandler.onCancel(null)
+    volumeChangeHandler.onCancel(null)
   }
 
   // Convenience method to read the current volume
-  fun getVolume() : Double {
+  fun readVolume() : Double {
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
@@ -46,14 +48,7 @@ class FlutterVolumeListenerPlugin : FlutterPlugin, FlutterVolumeListenerHostApi 
 
   // Reads the current volume and returns it to the caller on Flutter side.
   override fun getVolume(callback: (Result<Double>) -> Unit) {
-    callback(Result.success(getVolume()))
-  }
-
-  // This is for API Parity with iOS side where an extra trick is required to
-  // read the value after resuming the app from the background.
-  // On Android it does the same as 'getVolume', no difference.
-  override fun getVolumeOnResume(callback: (Result<Double>) -> Unit) {
-    callback(Result.success(getVolume()))
+    callback(Result.success(readVolume()))
   }
 
 }

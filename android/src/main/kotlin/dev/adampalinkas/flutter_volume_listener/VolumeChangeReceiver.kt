@@ -12,7 +12,7 @@ class VolumeChangeReceiver(
 
   override fun onReceive(context: Context, intent: Intent) {
     if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
-      val volume = plugin.getVolume()
+      val volume = plugin.readVolume()
       if (volume != lastVolume) {
         lastVolume = volume
         eventHandler?.onVolumeChangedEvent(volume)
