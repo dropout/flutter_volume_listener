@@ -15,7 +15,8 @@ A Flutter plugin to read volume and listen to volume changes on iOS.
   s.source           = { :path => '.' }
   s.source_files = 'flutter_volume_listener/Sources/flutter_volume_listener/**/*.swift'
   s.dependency 'Flutter'
-  s.platform = :ios, '13.0'
+  s.dependency 'Logging'
+  s.platform = :ios, '15.6'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
