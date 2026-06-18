@@ -19,7 +19,7 @@ private object FlutterVolumeListenerPluginPigeonUtils {
   }
 
   fun wrapError(exception: Throwable): List<Any?> {
-    return if (exception is FlutterError) {
+    return if (exception is FlutterVolumeListenerPluginError) {
       listOf(
         exception.code,
         exception.message,
@@ -41,7 +41,7 @@ private object FlutterVolumeListenerPluginPigeonUtils {
  * @property message The error message.
  * @property details The error details. Must be a datatype supported by the api codec.
  */
-class FlutterError (
+class FlutterVolumeListenerPluginError (
   val code: String,
   override val message: String? = null,
   val details: Any? = null
