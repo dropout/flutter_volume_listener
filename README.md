@@ -32,6 +32,12 @@ Uses `MPVolumeView` slider value (which receives correct system volume changes) 
 
 Use a **real device** rather than a simulator when trying to test or run your application.
 
+### Android build
+
+The plugin and example use Gradle 9.9.0, Android Gradle Plugin 9.5.1, and
+Kotlin Gradle Plugin 2.3.20. Gradle requires JDK 17 or newer.
+
+
 ## Usage
 
 ### Generic use case

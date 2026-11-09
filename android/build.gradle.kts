@@ -2,14 +2,14 @@ group = "dev.adampalinkas.flutter_volume_listener"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    val kotlinVersion = "2.2.20"
+    val kotlinVersion = "2.3.20"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("com.android.tools.build:gradle:9.5.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
@@ -22,9 +22,8 @@ allprojects {
 }
 
 apply(plugin = "com.android.library")
-apply(plugin = "kotlin-android")
 
-configure<com.android.build.gradle.LibraryExtension> {
+configure<com.android.build.api.dsl.LibraryExtension> {
     namespace = "dev.adampalinkas.flutter_volume_listener"
 
     compileSdk = 36
